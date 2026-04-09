@@ -1,0 +1,28 @@
+# Fly.io deployment configuration
+# Deploy: fly launch / fly deploy
+# Docs: https://fly.io/docs
+
+app = "gridahead"
+primary_region = "lhr"  # London Heathrow — closest to UK grid
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  DB_PATH = "/data/predictions.db"
+  PORT = "8090"
+
+[http_service]
+  internal_port = 8090
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+
+[mounts]
+  source = "predictions_data"
+  destination = "/data"
