@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GridAhead — UK Agile electricity price predictions</title>
+  <meta name="description" content="Free 3-day-ahead half-hourly Octopus Agile price predictions for all 14 UK DNO regions. Updated twice daily. No signup.">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>GridAhead</h1>
+    <p class="tagline">3-day-ahead UK Agile electricity price predictions &middot; free &middot; public</p>
+  </header>
+
+  <main>
+    <section class="controls">
+      <label for="region">Region</label>
+      <select id="region" aria-label="Select DNO region"></select>
+      <div class="meta" id="meta">Loading&hellip;</div>
+    </section>
+
+    <section class="chart-wrap" aria-live="polite">
+      <canvas id="chart"></canvas>
+    </section>
+
+    <section class="summary" id="summary"></section>
+
+    <section class="about">
+      <h2>How it works</h2>
+      <p>
+        Predictions are generated twice daily (11:05 and 13:05 UK time) by a
+        GradientBoostingRegressor trained on ~8 years of UK electricity market data:
+        wholesale prices, grid generation mix (gas / wind / nuclear / solar), wind
+        speed forecasts at 9 UK offshore and onshore wind farms, and weather
+        ensemble spread from ECMWF. The model uses a per-half-hour Kalman filter
+        for online regime tracking and blends with the AgilePredict API baseline.
+      </p>
+      <p>
+        Validation: 5-fold GroupKFold by date, CV R&sup2; &asymp; 0.88, MAE &asymp; 1.90 p/kWh.
+        See <a href="https://github.com/chrischungnl/GridAhead/blob/main/METHODOLOGY.md">METHODOLOGY.md</a>
+        for the full approach, feature set, and validation results.
+      </p>
+
+      <h2>Data feed</h2>
+      <p>
+        Raw predictions are available as static JSON on Cloudflare R2, with no
+        authentication, no rate limits, and CDN caching at Cloudflare's edge:
+      </p>
+      <pre><code>curl https://data.gridahead.chrischung.nl/predictions/C.json</code></pre>
+      <p>Endpoints:</p>
+      <ul>
+        <li><code>/predictions/latest.json</code> &mdash; all 14 regions, next 3 days</li>
+        <li><code>/predictions/{A..P}.json</code> &mdash; per-region files (smaller)</li>
+        <li><code>/predictions/meta.json</code> &mdash; forecast run metadata + model info</li>
+      </ul>
+      <p>
+        Full schema and example responses are in the
+        <a href="https://github.com/chrischungnl/GridAhead#data-feed">repository README</a>.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      <a href="https://github.com/chrischungnl/GridAhead">Source</a> &middot;
+      <a href="https://github.com/chrischungnl/GridAhead/blob/main/METHODOLOGY.md">Methodology</a> &middot;
+      <a href="https://data.gridahead.chrischung.nl/predictions/latest.json">JSON feed</a>
+    </p>
+    <p class="disclaimer">
+      Predictions are for informational purposes only and are not financial advice.
+      Derived from Open-Meteo weather forecasts, the UK Carbon Intensity API,
+      Elexon BMRS generation data, and Octopus public Agile rates.
+    </p>
+  </footer>
+
+  <script src="chart.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

@@ -1,11 +1,10 @@
-config.json
-*.db
-__pycache__/
-*.pyc
-*.log
+# Editor / OS junk
 .DS_Store
 .vscode/
 .idea/
-export-db.sh
-sync-db.sh
-litestream-source.yml
+*.swp
+
+# Never commit local-only files or credentials
+*.env
+*.db
+*.log

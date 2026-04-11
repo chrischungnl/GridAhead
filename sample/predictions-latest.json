@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-04-11T11:05:42.318000+00:00",
+  "_note": "This is a TRUNCATED sample — the real predictions/latest.json contains all 14 regions (A, B, C, D, E, F, G, H, J, K, L, M, N, P) with ~144 slots each spanning today + tomorrow + day-after. Full schema is identical; only region count and slot density differ.",
+  "regions": {
+    "C": {
+      "generated_at": "2026-04-11T11:05:42.318000+00:00",
+      "region": {"code": "C", "name": "London / South East", "multiplier": 1.0},
+      "dates": {
+        "2026-04-11": {
+          "slots": [
+            {"from": "2026-04-11T11:30:00+01:00", "to": "2026-04-11T12:00:00+01:00", "pence_inc_vat": 18.42, "low": 14.12, "high": 22.70},
+            {"from": "2026-04-11T12:00:00+01:00", "to": "2026-04-11T12:30:00+01:00", "pence_inc_vat": 17.88, "low": 13.55, "high": 22.21}
+          ],
+          "summary": {"avg": 18.15, "min": 17.88, "max": 18.42, "count": 2}
+        }
+      }
+    },
+    "P": {
+      "generated_at": "2026-04-11T11:05:42.318000+00:00",
+      "region": {"code": "P", "name": "Northern Scotland", "multiplier": 1.2369},
+      "dates": {
+        "2026-04-11": {
+          "slots": [
+            {"from": "2026-04-11T11:30:00+01:00", "to": "2026-04-11T12:00:00+01:00", "pence_inc_vat": 22.79, "low": 17.46, "high": 28.08},
+            {"from": "2026-04-11T12:00:00+01:00", "to": "2026-04-11T12:30:00+01:00", "pence_inc_vat": 22.11, "low": 16.76, "high": 27.47}
+          ],
+          "summary": {"avg": 22.45, "min": 22.11, "max": 22.79, "count": 2}
+        }
+      }
+    }
+  }
+}

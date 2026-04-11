@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-04-11T11:05:42.318000+00:00",
+  "forecast_run": "2026-04-11T11:05:42.318000+00:00",
+  "model": {
+    "type": "GradientBoostingRegressor",
+    "cv_r_squared": 0.88,
+    "cv_mae_pence": 1.90,
+    "blended_with": "AgilePredict (50/50)",
+    "retrained": "weekly (Sundays 02:00)"
+  },
+  "regions": [
+    {"code": "A", "name": "Eastern England",          "multiplier": 1.0642},
+    {"code": "B", "name": "East Midlands",            "multiplier": 1.0101},
+    {"code": "C", "name": "London / South East",      "multiplier": 1.0000},
+    {"code": "D", "name": "Merseyside & North Wales", "multiplier": 1.1235},
+    {"code": "E", "name": "West Midlands",            "multiplier": 1.0592},
+    {"code": "F", "name": "North Eastern England",    "multiplier": 1.0592},
+    {"code": "G", "name": "North Western England",    "multiplier": 1.0592},
+    {"code": "H", "name": "Southern England",         "multiplier": 1.0592},
+    {"code": "J", "name": "South Eastern England",    "multiplier": 1.1184},
+    {"code": "K", "name": "Southern Wales",           "multiplier": 1.1184},
+    {"code": "L", "name": "South Western England",    "multiplier": 1.1726},
+    {"code": "M", "name": "Yorkshire",                "multiplier": 1.0050},
+    {"code": "N", "name": "Southern Scotland",        "multiplier": 1.0642},
+    {"code": "P", "name": "Northern Scotland",        "multiplier": 1.2369}
+  ],
+  "schema_version": 1,
+  "data_feed_base": "https://data.gridahead.chrischung.nl",
+  "source_code": "https://github.com/chrischungnl/GridAhead"
+}
