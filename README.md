@@ -1,7 +1,7 @@
 # GridAhead
 
 **3-day-ahead half-hourly UK Octopus Agile electricity price predictions,
-for all 14 DNO regions. Free, public, no signup.**
+for all 14 DNO regions.**
 
 Predictions are regenerated twice daily (11:05 and 13:05 UK time) and are
 available before Octopus publishes the official next-day rates — giving
@@ -202,103 +202,6 @@ The training code and input data are not public (they live in a private
 monorepo that also holds personal telemetry). The methodology, features,
 and validation approach are fully described in `METHODOLOGY.md` — clear
 enough that you could reimplement the approach against your own data.
-
-## Architecture
-
-```
-┌─────────────────────┐     ┌─────────────────────┐     ┌──────────────────────┐
-│  Origin: macOS      │     │  Cloudflare R2      │     │  Cloudflare edge     │
-│  (private repo)     │────▶│  grid-ahead bucket  │────▶│  data.gridahead...   │
-│  generates & PUTs   │ 2×  │  public, CORS open  │ CDN │  (cached, free,      │
-│  predictions 11/13h │     │                     │     │  global, HTTPS)      │
-└─────────────────────┘     └─────────────────────┘     └──────────────────────┘
-                                                                  │
-                                         ┌────────────────────────┴───────────┐
-                                         ▼                                    ▼
-                                ┌──────────────────┐                ┌──────────────────┐
-                                │ Demo site        │                │ Any HTTP client  │
-                                │ (Pages)          │                │ (curl / browser  │
-                                │ gridahead.cc.nl  │                │ / cron / script) │
-                                └──────────────────┘                └──────────────────┘
-```
-
-- **Origin**: a macOS machine running the prediction model locally. No public
-  endpoint, no inbound connections. Writes JSON files to R2 after each
-  prediction run.
-- **Storage**: a public Cloudflare R2 bucket, ~60 objects total (14 region
-  files + `latest.json` + `meta.json`, refreshed twice daily).
-- **Delivery**: Cloudflare's edge CDN caches every object for 5 minutes
-  globally. All client requests hit the edge, not the origin.
-- **Demo**: a static HTML + JS + Chart.js page deployed to Cloudflare Pages
-  from this repo. Fetches from the same R2 bucket at runtime.
-
-Total operational cost: ~zero. Total operational attack surface: ~zero
-(the origin has no public endpoint; the storage has no code).
-
-## Repository layout
-
-```
-GridAhead/
-├── README.md           ← you are here
-├── METHODOLOGY.md      ← how the model is built and validated
-├── LICENSE             ← MIT
-├── demo/               ← static demo site deployed to gridahead.chrischung.nl
-│   ├── index.html
-│   ├── main.js
-│   ├── style.css
-│   └── chart.min.js    ← Chart.js (see setup below; not committed yet)
-└── sample/             ← example JSON responses so you can browse the schema
-    ├── predictions-latest.json
-    ├── predictions-C.json
-    └── meta.json
-```
-
-## Deploying the demo site
-
-The demo site is a single static folder (`demo/`) that is deployed to
-Cloudflare Pages on every push to `main`. Once-only setup:
-
-1. **Bundle Chart.js locally.** The demo page references `demo/chart.min.js`
-   rather than a CDN so the site has no runtime third-party dependencies:
-   ```sh
-   curl -o demo/chart.min.js https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js
-   ```
-   Commit the file once; Chart.js rarely changes and occupies ~200 KB.
-
-2. **Connect Cloudflare Pages to this repo.** In the Cloudflare dashboard →
-   Pages → Connect to Git → authorise GitHub → pick `chrischungnl/GridAhead`.
-   Build settings:
-   - Build command: *(empty)*
-   - Output directory: `demo`
-   Cloudflare will deploy on every push to `main`.
-
-3. **Add the custom domain.** Pages project → Custom Domains → add
-   `gridahead.chrischung.nl`. Cloudflare creates the DNS record and TLS
-   certificate automatically.
-
-4. **Set up the R2 bucket** for the JSON feed (this is the origin the demo
-   page fetches from). Cloudflare dashboard → R2 → Create bucket → name it
-   `grid-ahead`. In the bucket settings:
-   - **Custom Domains** → add `data.gridahead.chrischung.nl`
-   - **CORS Policy** → allow `GET` from `https://gridahead.chrischung.nl`:
-     ```json
-     [{
-       "AllowedOrigins": ["https://gridahead.chrischung.nl"],
-       "AllowedMethods": ["GET"],
-       "AllowedHeaders": ["*"],
-       "MaxAgeSeconds": 3600
-     }]
-     ```
-   - **R2 API Token** → create one with read/write access, save the access
-     key / secret key. These go into the origin's `config.json` for the
-     prediction upload pipeline.
-
-5. The origin machine (the private prediction pipeline) uploads JSON files
-   to the R2 bucket under the `predictions/` prefix. The demo page fetches
-   from `data.gridahead.chrischung.nl/predictions/*.json` at runtime.
-
-After setup, pushes to `main` deploy the demo site; the origin's scheduled
-prediction runs refresh the JSON feed twice a day. Nothing else to operate.
 
 ## Attribution and data sources
 
