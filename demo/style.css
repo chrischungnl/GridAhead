@@ -5,6 +5,10 @@
   --border: #e2e8f0;
   --card: #f8fafc;
   --accent: #2563eb;
+  --accent-band: rgba(37, 99, 235, 0.12);
+  --actual: #d97706;
+  --cheap: #059669;
+  --peak: #be123c;
   --code-bg: #f1f5f9;
 }
 
@@ -16,6 +20,10 @@
     --border: #1e293b;
     --card: #1e293b;
     --accent: #60a5fa;
+    --accent-band: rgba(96, 165, 250, 0.16);
+    --actual: #f59e0b;
+    --cheap: #34d399;
+    --peak: #f87171;
     --code-bg: #0b1220;
   }
 }
@@ -107,8 +115,37 @@ main {
   border-radius: 10px;
   padding: 1rem 1.25rem;
   height: 420px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.75rem;
 }
+
+.chart-legend {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin: 0 0.25rem 1.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.chart-legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.chart-legend .legend-item::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.chart-legend .legend-forecast { color: var(--accent); }
+.chart-legend .legend-actual { color: var(--actual); }
+
+.chart-legend .legend-actual[hidden] { display: none; }
 
 .summary {
   background: var(--card);
@@ -245,6 +282,41 @@ footer p {
 .disclaimer {
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+.attribution {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* ---------- Page arrival ---------- */
+
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+header,
+main > section {
+  opacity: 0;
+  animation: arrive 0.55s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+header       { animation-delay: 0.05s; }
+.controls    { animation-delay: 0.15s; }
+.chart-wrap  { animation-delay: 0.25s; }
+.summary     { animation-delay: 0.35s; }
+.about       { animation-delay: 0.45s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+  header,
+  main > section {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 640px) {

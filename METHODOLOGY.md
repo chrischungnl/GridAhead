@@ -22,11 +22,10 @@ consumption decisions (battery charging windows, EV scheduling, dishwasher
 start times). The model is run twice daily so the afternoon prediction can
 incorporate the morning's actual market conditions.
 
-Baseline: Octopus's own 4 pm publication is a hard ceiling for "definitive"
-data. [AgilePredict](https://agilepredict.com) is a strong existing
-third-party prediction service. GridAhead's target is to beat AgilePredict's
-mean absolute error on recent data while providing a 3-day horizon instead of
-the typical 1-day horizon.
+Baseline: Octopus's own 4 pm publication of next-day rates is the definitive
+source for next-day prices once it exists. GridAhead's contribution is the
+longer horizon (3 days vs 1 day) and the earlier availability — predictions
+are published in the morning, well before Octopus's own 4 pm release.
 
 ## Data sources
 
@@ -43,7 +42,6 @@ All inputs are public and free. No scraping, no PII:
   and onshore wind farm locations (Hornsea, Dogger Bank, Moray East, etc.),
   plus national temperature. Multi-model ensemble (ECMWF IFS, GFS, UKMO) for
   uncertainty quantification.
-- **AgilePredict** — the blending baseline; see §Blending below.
 
 Everything is cached in SQLite. Historical data is backfilled in chunks
 during initial setup (the Elexon BMRS endpoint has a 30-day per-request
@@ -197,8 +195,6 @@ see in production.
 **Reported metrics**:
 - CV R² ≈ 0.88
 - CV MAE ≈ 1.90 p/kWh
-- Outperforms AgilePredict by a small but consistent margin on the same
-  validation days
 
 (These are rounded; the exact numbers shift slightly with each weekly retrain.)
 
@@ -240,21 +236,8 @@ reality. GridAhead uses these as a **same-day blending signal**:
 - For tomorrow's predictions: apply a regime-shift nudge based on the ratio
   of today's system prices to today's earlier predictions
 
-This is a hybrid: the model is the primary mechanism, but it's willing to
-defer to ground truth when ground truth is available.
-
-## Blending with AgilePredict
-
-As a final step, GridAhead's predictions are blended **50/50 with AgilePredict**.
-The rationale is simple: both models are fallible, and two independently-trained
-predictors averaged almost always outperform either individually (the "wisdom
-of crowds" effect for models). The 50/50 weighting was chosen after testing
-a grid of weights on held-out data; the improvement from 50/50 vs pure
-GridAhead is small but consistent, and 50/50 is simpler to explain than
-a learned weighting.
-
-The blending is done via timezone-safe O(n) dict lookup — both models produce
-half-hour-keyed predictions, which are merged by timestamp.
+This is a hybrid: the model is the primary mechanism, but it defers to
+ground truth when ground truth is available.
 
 ## What the model can't do
 
@@ -299,13 +282,13 @@ system price conditioning after Elexon's noon settlement publication.
 - Elexon BMRS: [FUELHH endpoint docs](https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/FUELHH)
 - UK Carbon Intensity API: [carbonintensity.org.uk](https://api.carbonintensity.org.uk)
 - Open-Meteo: [open-meteo.com](https://open-meteo.com)
-- AgilePredict: [agilepredict.com](https://agilepredict.com)
 - scikit-learn GBR: [`GradientBoostingRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html)
 
 ## Feedback
 
 If you spot an issue with the predictions or the methodology, open an issue
-on the [GitHub repo](https://github.com/chrischungnl/GridAhead/issues). The
-training code is not public (it lives in a private solar-prediction monorepo)
-but the model's *approach* — the features, the validation, the control-theory
-layer — is fully described here.
+on the [GitHub repository](https://github.com/chrischungnl/GridAhead/issues).
+The training code is not open-sourced, but the model's *approach* — the
+features, the validation, the control-theory layer — is fully described
+here. That's clear enough to reimplement the approach against any equivalent
+dataset.

@@ -8,3 +8,6 @@
 *.env
 *.db
 *.log
+
+# Internal design-tool briefs (not for public consumption)
+.impeccable.md

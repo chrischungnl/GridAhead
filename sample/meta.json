@@ -5,7 +5,6 @@
     "type": "GradientBoostingRegressor",
     "cv_r_squared": 0.88,
     "cv_mae_pence": 1.90,
-    "blended_with": "AgilePredict (50/50)",
     "retrained": "weekly (Sundays 02:00)"
   },
   "regions": [

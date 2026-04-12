@@ -54,7 +54,7 @@ console.log(data.dates);
 
 All files are hosted as static JSON on a Cloudflare R2 public bucket,
 fronted by the custom domain `data.gridahead.chrischung.nl`. There is no
-backend server. Updates are pushed from a private origin twice daily.
+backend server.
 
 ### Endpoints
 
@@ -162,7 +162,6 @@ stats, and the region multiplier table:
     "type": "GradientBoostingRegressor",
     "cv_r_squared": 0.88,
     "cv_mae_pence": 1.90,
-    "blended_with": "AgilePredict (50/50)",
     "retrained": "weekly (Sundays 02:00)"
   },
   "regions": [ ... ],
@@ -189,19 +188,15 @@ The short version:
    tracks the model's residuals and applies an additive regime offset. This
    is the online-adaptation layer that catches price regime changes the
    weekly-retrained base model hasn't seen yet.
-4. After noon, **system prices from Elexon are blended in** at 80/20 for
-   same-day predictions and as a regime-shift nudge for tomorrow. The model
-   is willing to defer to ground truth when ground truth exists.
-5. The final output is **blended 50/50 with AgilePredict** as a published
-   baseline. Two independent predictors averaged reliably outperform either
-   alone.
-6. The model is retrained weekly (Sundays 02:00 UK time) and predictions
+4. After noon, **today's actual system prices from Elexon are incorporated**
+   at 80/20 for same-day predictions and as a regime-shift nudge for tomorrow.
+   The model defers to ground truth when ground truth is available.
+5. The model is retrained weekly (Sundays 02:00 UK time) and predictions
    are regenerated twice daily (11:05 and 13:05).
 
-The training code and input data are not public (they live in a private
-monorepo that also holds personal telemetry). The methodology, features,
-and validation approach are fully described in `METHODOLOGY.md` — clear
-enough that you could reimplement the approach against your own data.
+The methodology, features, and validation approach are fully described in
+[METHODOLOGY.md](METHODOLOGY.md) — clear enough to reimplement the approach
+against any equivalent dataset.
 
 ## Attribution and data sources
 
@@ -212,17 +207,13 @@ them are free and publicly accessible:
 - **Elexon BMRS** — UK grid half-hourly fuel mix ([API docs](https://bmrs.elexon.co.uk/api-documentation))
 - **UK Carbon Intensity API** — national generation mix forecast ([docs](https://api.carbonintensity.org.uk))
 - **Open-Meteo** — weather ensemble forecasts ([docs](https://open-meteo.com/en/docs))
-- **AgilePredict** — independent Agile price prediction service, used as a
-  blending baseline ([agilepredict.com](https://agilepredict.com))
 
-If you use this data in your own project, please mention GridAhead — it
-helps signal there's demand for a public Agile prediction feed.
+If you use this data in your project, attribution is appreciated.
 
 ## Questions, issues, feedback
 
-Open an issue on this repo. The data is free and the methodology is public
-— if you think a feature or approach would make the model better, I want
-to hear about it.
+Open an issue on this repository. Feedback on the data, methodology, or
+features is welcome.
 
 ## Disclaimer
 
