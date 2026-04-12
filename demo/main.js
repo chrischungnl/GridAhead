@@ -315,6 +315,27 @@ async function loadActualOverlay(regionCode) {
   }
 }
 
+// Build the Chart.js dataset object for the actual-rates overlay line.
+// Used both when the initial chart is created with cached rates (so both
+// lines animate in together) and when rates arrive async after first fetch.
+function buildActualDataset(aligned) {
+  return {
+    label: "Actual",
+    data: aligned,
+    borderColor: cssVar("--actual"),
+    backgroundColor: cssVar("--actual"),
+    borderWidth: 1.5,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    pointHoverBorderWidth: 2,
+    pointHoverBorderColor: cssVar("--card"),
+    fill: false,
+    tension: 0.28,
+    spanGaps: false,
+    _isActual: true,
+  };
+}
+
 function applyActualOverlay(rates) {
   if (!chartInstance) return;
   const slots = chartInstance.$metas;
@@ -322,45 +343,36 @@ function applyActualOverlay(rates) {
 
   const aligned = alignActualToSlots(slots, rates);
   const hasAny = aligned.some((v) => v != null);
+
+  const existing = chartInstance.data.datasets.find((d) => d._isActual);
+
   if (!hasAny) {
     setActualLegendVisible(false);
-    // Remove any previous overlay dataset in case of region-switch back to one without data
-    const idx = chartInstance.data.datasets.findIndex((d) => d._isActual);
-    if (idx >= 0) {
+    if (existing) {
+      const idx = chartInstance.data.datasets.indexOf(existing);
       chartInstance.data.datasets.splice(idx, 1);
-      chartInstance.update("none");
+      chartInstance.update();
     }
     return;
   }
 
-  const actualColor = cssVar("--actual");
-  const card = cssVar("--card");
-
-  const existing = chartInstance.data.datasets.find((d) => d._isActual);
   if (existing) {
+    // Already present (e.g. cached region rendered with overlay from the
+    // start). Refresh data and colours; animate only if values changed.
+    const same =
+      existing.data.length === aligned.length &&
+      existing.data.every((v, i) => v === aligned[i]);
     existing.data = aligned;
-    existing.borderColor = actualColor;
-    existing.pointHoverBorderColor = card;
+    existing.borderColor = cssVar("--actual");
+    existing.backgroundColor = cssVar("--actual");
+    existing.pointHoverBorderColor = cssVar("--card");
+    setActualLegendVisible(true);
+    if (!same) chartInstance.update();
   } else {
-    chartInstance.data.datasets.push({
-      label: "Actual",
-      data: aligned,
-      borderColor: actualColor,
-      backgroundColor: actualColor,
-      borderWidth: 1.5,
-      pointRadius: 0,
-      pointHoverRadius: 4,
-      pointHoverBorderWidth: 2,
-      pointHoverBorderColor: card,
-      fill: false,
-      tension: 0.28,
-      spanGaps: false,
-      _isActual: true,
-    });
+    chartInstance.data.datasets.push(buildActualDataset(aligned));
+    setActualLegendVisible(true);
+    chartInstance.update();   // default animation — line eases in
   }
-
-  setActualLegendVisible(true);
-  chartInstance.update("none");
 }
 
 /* ---------- chart + summary ---------- */
@@ -399,47 +411,58 @@ function renderRegion(regionCode) {
 
   const ctx = document.getElementById("chart").getContext("2d");
 
+  // If we already have the actual rates for this region in the session cache,
+  // include the overlay dataset in the INITIAL chart construction so both the
+  // forecast line and the actual line animate in together on region switch.
+  // Otherwise, the overlay will fetch async and ease in via applyActualOverlay.
+  const cachedRates = actualRateCache.get(regionCode);
+  const cachedAligned = cachedRates ? alignActualToSlots(slots, cachedRates) : null;
+  const hasCachedActual = cachedAligned && cachedAligned.some((v) => v != null);
+
+  const datasets = [
+    {
+      label: "upper",
+      data: highs,
+      borderColor: "transparent",
+      backgroundColor: band,
+      borderWidth: 0,
+      pointRadius: 0,
+      fill: "+1",
+      tension: 0.3,
+    },
+    {
+      label: "lower",
+      data: lows,
+      borderColor: "transparent",
+      backgroundColor: band,
+      borderWidth: 0,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.3,
+    },
+    {
+      label: "Predicted unit rate",
+      data: prices,
+      borderColor: accent,
+      backgroundColor: accent,
+      borderWidth: 1.75,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      pointHoverBorderWidth: 2,
+      pointHoverBorderColor: card,
+      fill: false,
+      tension: 0.28,
+      _isPrice: true,
+    },
+  ];
+
+  if (hasCachedActual) {
+    datasets.push(buildActualDataset(cachedAligned));
+  }
+
   chartInstance = new Chart(ctx, {
     type: "line",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "upper",
-          data: highs,
-          borderColor: "transparent",
-          backgroundColor: band,
-          borderWidth: 0,
-          pointRadius: 0,
-          fill: "+1",
-          tension: 0.3,
-        },
-        {
-          label: "lower",
-          data: lows,
-          borderColor: "transparent",
-          backgroundColor: band,
-          borderWidth: 0,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.3,
-        },
-        {
-          label: "Predicted unit rate",
-          data: prices,
-          borderColor: accent,
-          backgroundColor: accent,
-          borderWidth: 1.75,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-          pointHoverBorderWidth: 2,
-          pointHoverBorderColor: card,
-          fill: false,
-          tension: 0.28,
-          _isPrice: true,
-        },
-      ],
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -541,9 +564,12 @@ function renderRegion(regionCode) {
 
   renderSummary(regionCode, slots);
 
-  // Progressive enhancement: overlay the real published Agile rates for the
-  // portion of the forecast period where they already exist. Async, non-blocking.
-  setActualLegendVisible(false);
+  // Legend reflects what's in the chart RIGHT NOW — visible if the cached
+  // overlay was baked into the initial datasets, hidden otherwise (pending fetch).
+  setActualLegendVisible(hasCachedActual);
+
+  // Progressive enhancement: fetch actual rates if not already cached.
+  // When cached, this is a fast no-op refresh.
   loadActualOverlay(regionCode);
 }
 
